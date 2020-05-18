@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+using phonix_api.Services;
+
 namespace phonix_api
 {
     public class Startup
@@ -26,6 +28,7 @@ namespace phonix_api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddSingleton<MemoryCacheService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,6 +49,8 @@ namespace phonix_api
             {
                 endpoints.MapControllers();
             });
+
+        
         }
     }
 }
