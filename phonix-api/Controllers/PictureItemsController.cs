@@ -20,7 +20,7 @@ namespace phonix_api.Controllers
     {
 
         private readonly ILogger<PictureItemsController> _logger;
-        private MemoryCache _cache;
+        private readonly MemoryCache _cache;
         public PictureItemsController(ILogger<PictureItemsController> logger,
         MemoryCacheService cache)
         {
@@ -63,11 +63,57 @@ namespace phonix_api.Controllers
                 // cacheEntryOptions.Size = 1;
 
                 // Save data in cache.
+                // TODO Save the file on disk
                 _cache.Set(picture.Name, fileBytes, cacheEntryOptions);
                 } 
             }  
             return Ok(new { status = true, message = picture.Name});
         
+        }
+
+        [HttpPost]
+        public ActionResult put([FromForm] PictureFormModel pictureForm)
+        {
+            string id  = pictureForm.key;
+            var picture = pictureForm.data;
+            //TODO Implement put method to update the picture.
+            throw new NotImplementedException();
+            //  // Saving Image on Server
+            // if (picture.Length > 0) {
+            //     using (var ms = new MemoryStream())
+            //     {
+            //     picture.CopyTo(ms);
+            //     var fileBytes = ms.ToArray();
+            //     // Key not in cache, so get data.
+
+            //     var cacheEntryOptions = new MemoryCacheEntryOptions()
+            //         // Set cache entry size by extension method.
+            //         .SetSize(1)
+            //         // Keep in cache for this time, reset time if accessed.
+            //         .SetSlidingExpiration(TimeSpan.FromSeconds(300));
+
+            //     // Set cache entry size via property.
+            //     // cacheEntryOptions.Size = 1;
+
+            //     // Save data in cache.
+            //     // TODO Save the file on disk
+            //     _cache.Set(picture.Name, fileBytes, cacheEntryOptions);
+            //     } 
+            // }  
+            // return Ok(new { status = true, message = picture.Name});
+        }
+
+        [HttpDelete("{key}")]
+        public ActionResult delete(string key)
+        {
+            _cache.Remove(key);
+            return Ok(new { status = true });
+        }
+
+        [HttpGet("list/{size}")]
+        public ActionResult getList(int size)
+        {
+            throw new NotImplementedException();
         }
     }
 }
