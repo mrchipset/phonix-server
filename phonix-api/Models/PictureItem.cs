@@ -1,13 +1,15 @@
 using System;
-
-namespace phonix_api
+using System.ComponentModel.DataAnnotations;
+namespace phonix_api.Models
 {
     public class PictureItem
     {
-        public DateTime Date { get; set; }
-
-        public int Owner { get; set; }
-
+        [Key]
+        public int id { get; set; }
+        public DateTime CreateDate { get; set; }
+        public DateTime UpdateDate{ get; set; }
         public string Summary { get; set; }
+        public string Path { get; set; }
+        
     }
 }

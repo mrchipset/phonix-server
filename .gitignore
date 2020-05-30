@@ -803,3 +803,5 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/vim,linux,macos,emacs,windows,notepadpp,jupyternotebooks
+phonix-api/Migrations
+*.db

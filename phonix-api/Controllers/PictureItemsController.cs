@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Mvc;
@@ -10,8 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Memory;
 
 using phonix_api.Services;
-using System.Text;
-
+using phonix_api.Models;
 namespace phonix_api.Controllers
 {
     [ApiController]
@@ -21,11 +21,14 @@ namespace phonix_api.Controllers
 
         private readonly ILogger<PictureItemsController> _logger;
         private readonly MemoryCache _cache;
+        private readonly PhonixDbContext _dbContext;
         public PictureItemsController(ILogger<PictureItemsController> logger,
-        MemoryCacheService cache)
+        MemoryCacheService cache,
+        PhonixDbContext dbContext)
         {
             _logger = logger;
             _cache = cache;
+            _dbContext = dbContext;
         }
 
         [HttpGet("{key}")]
@@ -65,7 +68,14 @@ namespace phonix_api.Controllers
                 // Save data in cache.
                 // TODO Save the file on disk
                 _cache.Set(picture.Name, fileBytes, cacheEntryOptions);
+                PictureItem pictureItem = new PictureItem
+                {
+                    Path = picture.Name
+                };
+                _dbContext.PictureItems.Add(pictureItem);
+                _dbContext.SaveChangesAsync();
                 } 
+                
             }  
             return Ok(new { status = true, message = picture.Name});
         

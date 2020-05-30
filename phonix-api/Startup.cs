@@ -10,8 +10,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Sqlite;
 using phonix_api.Services;
+using phonix_api.Models;
 
 namespace phonix_api
 {
@@ -29,6 +31,7 @@ namespace phonix_api
         {
             services.AddControllers();
             services.AddSingleton<MemoryCacheService>();
+            services.AddDbContext<PhonixDbContext>(options=>options.UseSqlite("Filename=./test.db"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
