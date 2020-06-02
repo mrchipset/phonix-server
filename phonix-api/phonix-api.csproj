@@ -5,6 +5,11 @@
     <RootNamespace>phonix_api</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Watch' ">
+    <StartAction>Project</StartAction>
+    <LaunchUrl>http://localhost:5000</LaunchUrl>
+    <LaunchBrowser></LaunchBrowser>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.4">
@@ -16,4 +21,7 @@
   </ItemGroup>
 
 
+  <ItemGroup>
+    <Folder Include="Utility\" />
+  </ItemGroup>
 </Project>

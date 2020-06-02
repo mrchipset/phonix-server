@@ -22,36 +22,60 @@ namespace phonix_api.Controllers
         private readonly ILogger<PictureItemsController> _logger;
         private readonly MemoryCache _cache;
         private readonly PhonixDbContext _dbContext;
+        private readonly FileStorageService _fileStorageService;
         public PictureItemsController(ILogger<PictureItemsController> logger,
         MemoryCacheService cache,
-        PhonixDbContext dbContext)
+        PhonixDbContext dbContext,
+        FileStorageService fileStorage)
         {
             _logger = logger;
             _cache = cache;
             _dbContext = dbContext;
+            _fileStorageService = fileStorage;
         }
 
         [HttpGet("{key}")]
         public IActionResult Get(string key)
         {
-            // Array a;
+            var contentTypeStr = "image/jpeg";
             if (_cache.TryGetValue(key, out byte[] cacheEntry))
             {
-                var contentTypeStr = "image/jpeg";
                 return new FileContentResult(cacheEntry, contentTypeStr);
             }
-            return Ok(new { status = true, message = "Student Posted Successfully"});
+            try
+            {
+                var item = _dbContext.PictureItems
+                    .Single(o => o.Summary == key);
+                _fileStorageService.Get(item.Path, out MemoryStream stream);
+                if (stream != null)
+                {
+                    var fileBytes = stream.ToArray();
+                    var cacheEntryOptions = new MemoryCacheEntryOptions()
+                        // Set cache entry size by extension method.
+                        .SetSize(1)
+                        // Keep in cache for this time, reset time if accessed.
+                        .SetSlidingExpiration(TimeSpan.FromSeconds(300));
+                    // Set cache entry size via property.
+                    cacheEntryOptions.Size = 1;
+                    _cache.Set(key, fileBytes, cacheEntryOptions);
+                    return new FileContentResult(fileBytes, contentTypeStr);
+                }
+           
+            }catch(InvalidOperationException)
+            {
+                //Do Nothing
+            }
+            return NotFound(new { status = false, message = "Your requested is not existed."});
         }
 
         [HttpPost]
-        public ActionResult post([FromForm] PictureFormModel pictureForm)
+        public ActionResult Post([FromForm] PictureFormModel pictureForm)
         {
             string id  = pictureForm.key;
             var picture = pictureForm.data;
             // Saving Image on Server
             if (picture.Length > 0) {
-                using (var ms = new MemoryStream())
-                {
+                var ms = new MemoryStream();
                 picture.CopyTo(ms);
                 var fileBytes = ms.ToArray();
                 // Key not in cache, so get data.
@@ -62,27 +86,34 @@ namespace phonix_api.Controllers
                     // Keep in cache for this time, reset time if accessed.
                     .SetSlidingExpiration(TimeSpan.FromSeconds(300));
 
-                // Set cache entry size via property.
-                // cacheEntryOptions.Size = 1;
-
-                // Save data in cache.
-                // TODO Save the file on disk
-                _cache.Set(picture.Name, fileBytes, cacheEntryOptions);
-                PictureItem pictureItem = new PictureItem
+                    // Set cache entry size via property.
+                    cacheEntryOptions.Size = 1;
+                // Save data.
+                bool success = _fileStorageService.Create(ref ms, out string path, out string hashCode);
+                if (success)
                 {
-                    Path = picture.Name
-                };
-                _dbContext.PictureItems.Add(pictureItem);
-                _dbContext.SaveChangesAsync();
-                } 
-                
-            }  
-            return Ok(new { status = true, message = picture.Name});
-        
+                    _cache.Set(hashCode, fileBytes, cacheEntryOptions);
+                    PictureItem pictureItem = new PictureItem
+                    {
+                        Path = path,
+                        Summary = hashCode,
+                        CreateDate = DateTime.Now,
+                        UpdateDate = DateTime.Now,
+                    };
+                    _dbContext.PictureItems.Add(pictureItem);
+                    _dbContext.SaveChangesAsync();
+                    return Ok(new { status = true, url = hashCode });
+
+                } else
+                {
+                    return BadRequest(new { status = false, message = "Alread Existed" });
+                }
+            }
+            return BadRequest(new { status = false, message = "No Content Upload"});
         }
 
-        [HttpPost]
-        public ActionResult put([FromForm] PictureFormModel pictureForm)
+        [HttpPut]
+        public ActionResult Put([FromForm] PictureFormModel pictureForm)
         {
             string id  = pictureForm.key;
             var picture = pictureForm.data;
@@ -114,14 +145,14 @@ namespace phonix_api.Controllers
         }
 
         [HttpDelete("{key}")]
-        public ActionResult delete(string key)
+        public ActionResult Delete(string key)
         {
             _cache.Remove(key);
             return Ok(new { status = true });
         }
 
         [HttpGet("list/{size}")]
-        public ActionResult getList(int size)
+        public ActionResult GetList(int size)
         {
             throw new NotImplementedException();
         }

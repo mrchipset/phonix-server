@@ -31,6 +31,7 @@ namespace phonix_api
         {
             services.AddControllers();
             services.AddSingleton<MemoryCacheService>();
+            services.AddSingleton(s=>new FileStorageService(new FileHashService()));
             services.AddDbContext<PhonixDbContext>(options=>options.UseSqlite("Filename=./test.db"));
         }
 

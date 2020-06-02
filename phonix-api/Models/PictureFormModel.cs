@@ -1,7 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Http;
 
-namespace phonix_api.Models                                                             
+namespace phonix_api .Models                                                             
 {
     public class PictureFormModel
     {

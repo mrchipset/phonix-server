@@ -1,5 +1,8 @@
 using System;
+using System.IO;
+using System.Security.Cryptography;
 
+using phonix_api.Utility;
 namespace phonix_api.Services
 {
     public class FileHashService 
@@ -9,17 +12,26 @@ namespace phonix_api.Services
             HYPER1,
             HYPER2,
             MD5,
-            SHA
+            SHA256,
+            SHA1
         }
 
-        public FileHashService(HashType hashType)
+        public FileHashService(HashType hashType=HashType.MD5)
         {
-            throw new NotImplementedException();
         }
 
         public string GetHash(ref object obj)
         {
-            throw new NotImplementedException();
+            MemoryStream s = Utility.Memory.ObjectToStream(ref obj);
+            return GetHash(ref s);
+        }
+
+        public string GetHash(ref MemoryStream stream)
+        {
+            HashAlgorithm hashAlgorithm = HashAlgorithm.Create("MD5");
+            byte[] hashBytes = hashAlgorithm.ComputeHash(stream);
+            string[] hex = BitConverter.ToString(hashBytes).Split('-');
+            return string.Concat(hex);
         }
 
     }
