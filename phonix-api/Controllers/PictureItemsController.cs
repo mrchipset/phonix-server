@@ -18,7 +18,7 @@ namespace phonix_api.Controllers
     [Route("[controller]")]
     public class PictureItemsController : ControllerBase
     {
-
+        
         private readonly ILogger<PictureItemsController> _logger;
         private readonly MemoryCache _cache;
         private readonly PhonixDbContext _dbContext;
@@ -112,49 +112,109 @@ namespace phonix_api.Controllers
             return BadRequest(new { status = false, message = "No Content Upload"});
         }
 
-        [HttpPut]
-        public ActionResult Put([FromForm] PictureFormModel pictureForm)
+        [HttpPut("{summary}")]
+        public ActionResult Put(string summary, [FromForm] PictureFormModel pictureForm)
         {
-            string id  = pictureForm.key;
+            string id = pictureForm.key;
             var picture = pictureForm.data;
-            //TODO Implement put method to update the picture.
-            throw new NotImplementedException();
-            //  // Saving Image on Server
-            // if (picture.Length > 0) {
-            //     using (var ms = new MemoryStream())
-            //     {
-            //     picture.CopyTo(ms);
-            //     var fileBytes = ms.ToArray();
-            //     // Key not in cache, so get data.
 
-            //     var cacheEntryOptions = new MemoryCacheEntryOptions()
-            //         // Set cache entry size by extension method.
-            //         .SetSize(1)
-            //         // Keep in cache for this time, reset time if accessed.
-            //         .SetSlidingExpiration(TimeSpan.FromSeconds(300));
+            try
+            {
+                var item = _dbContext.PictureItems
+                    .Single(o => o.Summary == summary);
+                // Saving Image on Server
+                if (picture.Length > 0)
+                {
+                    var ms = new MemoryStream();
+                    picture.CopyTo(ms);
+                    var fileBytes = ms.ToArray();
+                    // Key not in cache, so get data.
 
-            //     // Set cache entry size via property.
-            //     // cacheEntryOptions.Size = 1;
+                    var cacheEntryOptions = new MemoryCacheEntryOptions()
+                        // Set cache entry size by extension method.
+                        .SetSize(1)
+                        // Keep in cache for this time, reset time if accessed.
+                        .SetSlidingExpiration(TimeSpan.FromSeconds(300));
 
-            //     // Save data in cache.
-            //     // TODO Save the file on disk
-            //     _cache.Set(picture.Name, fileBytes, cacheEntryOptions);
-            //     } 
-            // }  
-            // return Ok(new { status = true, message = picture.Name});
+                    // Set cache entry size via property.
+                    cacheEntryOptions.Size = 1;
+                    // Save data.
+                    bool success = _fileStorageService.Create(ref ms, out string path, out string hashCode);
+                    if (success)
+                    {
+                        _cache.Set(hashCode, fileBytes, cacheEntryOptions);
+                        _cache.Remove(item.Summary);
+                        item.Summary = hashCode;
+                        _fileStorageService.Remove(item.Path);
+                        item.Path = path;
+                        item.UpdateDate = DateTime.Now;
+                        _dbContext.SaveChangesAsync();
+                        return Ok(new { status = true, url = hashCode });
+                    }
+                    else
+                    {
+                        return BadRequest(new { status = false, message = "Alread Existed" });
+                    }
+                }
+                else
+                {
+                    return BadRequest(new { status = false, message = "No Content Upload" });
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                return NotFound(new { status = "false", message = "Item Not found" });
+            }         
         }
 
         [HttpDelete("{key}")]
         public ActionResult Delete(string key)
         {
-            _cache.Remove(key);
-            return Ok(new { status = true });
+            try
+            {
+                var item = _dbContext.PictureItems
+                    .Single(o => o.Summary == key);
+                _fileStorageService.Remove(item.Path);
+                _cache.Remove(item.Summary);
+                _dbContext.PictureItems.Remove(item);
+                _dbContext.SaveChangesAsync();
+                return Ok(new { status = true });
+            }
+            catch (InvalidOperationException)
+            {
+                //Do Nothing
+                return NotFound(new { status = false, message = "item not found" });
+            }
         }
-
-        [HttpGet("list/{size}")]
-        public ActionResult GetList(int size)
+        
+        [HttpGet("list/{size}/{page}")]
+        public ActionResult GetList(int size, int page)
         {
-            throw new NotImplementedException();
+            int count = _dbContext.PictureItems.Count();
+            try
+            {
+                var queryset = _dbContext.PictureItems
+                    .OrderBy(p => p.UpdateDate)
+                    .Skip(page * size)
+                    .Take(size);
+                return Ok(new
+                {
+                    status = true,
+                    list = queryset.ToArray(),
+                    pages = count / size,
+                    current = page
+                });
+            }
+            catch(InvalidOperationException)
+            {
+                return Ok(new
+                {
+                    status = false,
+                    list = new List<PictureItem>(),
+                    pages = count / size,
+                    current = page
+                });
+            }
         }
     }
 }

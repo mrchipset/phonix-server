@@ -29,6 +29,7 @@ namespace phonix_api.Services
         public string GetHash(ref MemoryStream stream)
         {
             HashAlgorithm hashAlgorithm = HashAlgorithm.Create("MD5");
+            stream.Seek(0, SeekOrigin.Begin);
             byte[] hashBytes = hashAlgorithm.ComputeHash(stream);
             string[] hex = BitConverter.ToString(hashBytes).Split('-');
             return string.Concat(hex);

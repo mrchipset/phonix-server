@@ -33,6 +33,17 @@ namespace phonix_api.Services
             return true;
         }
 
+        public bool Remove(string path)
+        {
+            path = ROOTDIR + "/" + path;
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
+            File.Delete(path);
+            return true;
+        }
         private string GetPathFromHashCode(string hashCode)
         {
             string fileName = hashCode.Substring(2);
