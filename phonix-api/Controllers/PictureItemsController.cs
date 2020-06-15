@@ -106,7 +106,7 @@ namespace phonix_api.Controllers
 
                 } else
                 {
-                    return BadRequest(new { status = false, message = "Alread Existed" });
+                    return BadRequest(new { status = false, message = "Already Existed" });
                 }
             }
             return BadRequest(new { status = false, message = "No Content Upload"});
@@ -153,7 +153,7 @@ namespace phonix_api.Controllers
                     }
                     else
                     {
-                        return BadRequest(new { status = false, message = "Alread Existed" });
+                        return BadRequest(new { status = false, message = "Already Existed" });
                     }
                 }
                 else
@@ -183,7 +183,7 @@ namespace phonix_api.Controllers
             catch (InvalidOperationException)
             {
                 //Do Nothing
-                return NotFound(new { status = false, message = "item not found" });
+                return NotFound(new { status = false, message = "Item not found" });
             }
         }
         
